@@ -38,9 +38,18 @@ class VernierCaliper():
             round(np.mean(self.total_time) / self.n_calls[0], 5) # mean time per call
         ]
 
+    @classmethod
+    def labels(self):
+        return ["Routine", "Total time (s)", "Self (s)", "Cumul time (s)",
+                "No. calls", "% time", "Time per call (s)"]
+
 
 class VernierData():
-    """Class to hold Vernier data in a structured way, and provide methods for filtering and outputting the data."""
+    """
+    Class to hold Vernier data from a single instrumented job in a structured way.
+    Provides methods for filtering and outputting the data.
+
+    """
 
     def __init__(self):
 
@@ -54,7 +63,6 @@ class VernierData():
 
         # Create empty data arrays
         self.data[caliper_key] = VernierCaliper(caliper_key)
-
 
     def filter(self, caliper_keys: list[str]):
         """Filters the Vernier data to include only calipers matching the provided keys.
@@ -80,7 +88,7 @@ class VernierData():
         it is printed to the terminal."""
 
         txt_table = []
-        txt_table.append(["Routine", "Total time (s)", "Self (s)", "Cumul time (s)", "No. calls", "% time", "Time per call (s)"])
+        txt_table.append(VernierCaliper.labels())
         for caliper in self.data.keys():
             txt_table.append(self.data[caliper].reduce())
 
@@ -93,3 +101,59 @@ class VernierData():
             with open(txt_path, 'w') as f:
                 for row in txt_table:
                     f.write('| {:>{}} | {:>14} | {:>8} | {:>14} | {:>9} | {:>7} | {:>17} |\n'.format(row[0], max_caliper_len, *row[1:]))
+
+
+class VernierDataAggregation():
+    """
+    Class to hold an aggregation of VernierData instances.
+    Instances are asserted to be consistent in terms enforced by the
+    interal_consistency method.
+
+    """
+    def __init__(self):
+        self.vernier_data = {}
+        return
+
+    def add_data(self, label, vernier_data):
+        if label in self.vernier_data:
+            raise ValueError(f'The label {label} already exists in this aggregation. '
+                             'please use a different label or remove the existing entry.')
+        if not isinstance(vernier_data, VernierData):
+            raise TypeError(f'The provided vernier_data is not a VernierData object.')
+        self.vernier_data[label] = vernier_data
+
+    def remove_data(self, label):
+        if label not in self.vernier_data:
+            raise ValueError(f'The label {label} does not exist in this aggregation. ')
+        discarded = self.vernier_data.pop(label)
+
+    def internal_consistency(self):
+        # NotImplemented
+        return true
+
+    def caliper_list(self):
+        result = []
+
+        for k, vdata in self.vernier_data.items():
+            loop_calipers = sorted(list(vdata.data.keys()))
+            if len(result) == 0:
+                result = loop_calipers
+            else:
+                if loop_calipers != result:
+                    raise ValueError('inconsistent calipers in contents')
+        result.sort()
+        return result
+
+
+    def get(self, caliper_key):
+        """Return an array of all the data from all aggregation members"""
+        results = VernierCaliper(caliper_key)
+        for akey, vdata in self.vernier_data.items():
+            results.total_time += vdata.data[caliper_key].total_time
+            results.time_percent += vdata.data[caliper_key].time_percent
+            results.self_time += vdata.data[caliper_key].self_time
+            results.cumul_time += vdata.data[caliper_key].cumul_time
+            results.n_calls += vdata.data[caliper_key].n_calls
+
+        return results
+
