@@ -102,6 +102,12 @@ class VernierData():
                 for row in txt_table:
                     f.write('| {:>{}} | {:>14} | {:>8} | {:>14} | {:>9} | {:>7} | {:>17} |\n'.format(row[0], max_caliper_len, *row[1:]))
 
+    def get(self, caliper_key):
+        """Return a VernierCaliper for this caliper_key."""
+        if caliper_key not in self.data.keys():
+            return None
+        return self.data[caliper_key]
+
 
 class VernierDataAggregation():
     """
@@ -164,6 +170,8 @@ class VernierDataAggregation():
         for this caliper_key.
 
         """
+        if caliper_key not in self.caliper_list():
+            return None
         self.internal_consistency()
         results = VernierCaliper(caliper_key)
         for akey, vdata in self.vernier_data.items():
