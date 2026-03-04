@@ -56,5 +56,26 @@ class TestVernierCaliper(unittest.TestCase):
         self.assertFalse(self.caliper_a > self.caliper_b)
         self.assertFalse(self.caliper_a == self.caliper_b)
 
+    def test_minus(self):
+        self.caliper_a.time_percent = [10.0, 20.0]
+        self.caliper_a.cumul_time = [30.0, 40.0]
+        self.caliper_a.self_time = [5.0, 15.0]
+        self.caliper_a.total_time = [25.0, 35.0]
+        self.caliper_a.n_calls = [2, 2]
+
+        self.caliper_b.time_percent = [12.0, 25.0]
+        self.caliper_b.cumul_time = [35.0, 46.0]
+        self.caliper_b.self_time = [6.0, 19.0]
+        self.caliper_b.total_time = [28.0, 39.0]
+        self.caliper_b.n_calls = [2, 2]
+
+        result_caliper = self.caliper_b - self.caliper_a
+        self.assertEqual(result_caliper.name, "test_caliper_b - test_caliper_a")
+        self.assertEqual(result_caliper.time_percent, [2.0, 5.0])
+        self.assertEqual(result_caliper.cumul_time, [5.0, 6.0])
+        self.assertEqual(result_caliper.self_time, [1.0, 4.0])
+        self.assertEqual(result_caliper.total_time, [3.0, 4.0])
+        self.assertEqual(result_caliper.n_calls, [2, 2])
+
 if __name__ == '__main__':
     unittest.main()
