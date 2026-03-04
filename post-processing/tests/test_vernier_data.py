@@ -137,5 +137,30 @@ class TestVernierData(unittest.TestCase):
         self.assertIn("caliper_a", agg_data.data)
         self.assertIn("caliper_b", agg_data.data)
 
+    def test_minus(self):
+        data1 = VernierData()
+        data1.add_caliper("caliper_a")
+        data1.data["caliper_a"].time_percent = [10.0, 20.0]
+        data1.data["caliper_a"].cumul_time = [30.0, 40.0]
+        data1.data["caliper_a"].self_time = [5.0, 15.0]
+        data1.data["caliper_a"].total_time = [25.0, 35.0]
+        data1.data["caliper_a"].n_calls = [2, 2]
+
+        data2 = VernierData()
+        data2.add_caliper("caliper_a")
+        data2.data["caliper_a"].time_percent = [15.0, 25.0]
+        data2.data["caliper_a"].cumul_time = [35.0, 45.0]
+        data2.data["caliper_a"].self_time = [6.0, 16.0]
+        data2.data["caliper_a"].total_time = [28.0, 38.0]
+        data2.data["caliper_a"].n_calls = [3, 3]
+
+        result_data = data2 - data1
+        self.assertIn("caliper_a", result_data.data)
+        self.assertEqual(result_data.data["caliper_a"].time_percent, [5.0])
+        self.assertEqual(result_data.data["caliper_a"].cumul_time, [5.0])
+        self.assertEqual(result_data.data["caliper_a"].self_time, [1.0])
+        self.assertEqual(result_data.data["caliper_a"].total_time, [3.0])
+        self.assertEqual(result_data.data["caliper_a"].n_calls, [1])
+
 if __name__ == '__main__':
     unittest.main()

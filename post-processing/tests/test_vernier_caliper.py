@@ -71,11 +71,11 @@ class TestVernierCaliper(unittest.TestCase):
 
         result_caliper = self.caliper_b - self.caliper_a
         self.assertEqual(result_caliper.name, "test_caliper_b - test_caliper_a")
-        self.assertEqual(result_caliper.time_percent, [2.0, 5.0])
-        self.assertEqual(result_caliper.cumul_time, [5.0, 6.0])
-        self.assertEqual(result_caliper.self_time, [1.0, 4.0])
-        self.assertEqual(result_caliper.total_time, [3.0, 4.0])
-        self.assertEqual(result_caliper.n_calls, [2, 2])
+        self.assertEqual(result_caliper.time_percent, [3.5])
+        self.assertEqual(result_caliper.cumul_time, [5.5])
+        self.assertEqual(result_caliper.self_time, [2.5])
+        self.assertEqual(result_caliper.total_time, [3.5])
+        self.assertEqual(result_caliper.n_calls, [0])
 
 if __name__ == '__main__':
     unittest.main()

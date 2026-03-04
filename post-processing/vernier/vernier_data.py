@@ -31,6 +31,21 @@ class VernierCaliper():
 
         return
 
+    def __sub__(self, other):
+        """Defines subtraction of two VernierCaliper objects"""
+
+        if self.name != other.name:
+            result = VernierCaliper(f"{self.name} - {other.name}")
+        else:
+            result = VernierCaliper(self.name)
+        result.time_percent = [np.mean(self.time_percent) - np.mean(other.time_percent)]
+        result.cumul_time = [np.mean(self.cumul_time) - np.mean(other.cumul_time)]
+        result.self_time = [np.mean(self.self_time) - np.mean(other.self_time)]
+        result.total_time = [np.mean(self.total_time) - np.mean(other.total_time)]
+        result.n_calls = [np.mean(self.n_calls) - np.mean(other.n_calls)]
+
+        return result
+
     def reduce(self) -> list:
         """Reduces the data for this caliper to a single row of summary data."""
 
@@ -60,6 +75,17 @@ class VernierData():
 
         # Create empty data arrays
         self.data[caliper_key] = VernierCaliper(caliper_key)
+
+
+    def __sub__(self, other):
+        """Defines subtraction of two VernierData objects, by subtracting the data for each caliper."""
+
+        result = VernierData()
+        for caliper_key in self.data.keys():
+            if caliper_key in other.data:
+                result.data[caliper_key] = self.data[caliper_key] - other.data[caliper_key]
+
+        return result
 
 
     def filter(self, caliper_keys: list[str]):
