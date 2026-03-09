@@ -24,23 +24,38 @@ class VernierReader():
         """
 
         loaded = VernierData()
+        n_ranks_total = None
+        rank = 0
 
         # Populate data
-        contents = self.path.read_text().splitlines()
+        contents = self.path.read_text()
+        n_ranks_in_file = contents.count("Task") # Number of ranks worth of data in file only countable this way
+        contents = contents.splitlines()
         for line in contents:
             sline = line.split()
             if len(sline) > 0: # Line contains data
+                if "Task" in sline:
+                    if n_ranks_total is None:
+                        n_ranks_total = int(sline[3])
+                        if not n_ranks_in_file in [1, n_ranks_total]:
+                            raise ValueError(f"Input data not consistent with either collated or multi-file vernier output.")
+                    rank = int(sline[1]) # Extract rank number from the data line
                 if sline[0].isdigit(): # Caliper lines start with a digit
+
+                    if n_ranks_in_file == 1:
+                        data_index = 0
+                    else:
+                        data_index = rank - 1 # Data index for this rank (0-based)
 
                     caliper = sline[-1]
                     if not caliper in loaded.data:
-                        loaded.add_caliper(caliper)
+                        loaded.add_caliper(caliper, n_ranks_in_file)
 
-                    loaded.data[caliper].time_percent.append(float(sline[1]))
-                    loaded.data[caliper].cumul_time.append(float(sline[2]))
-                    loaded.data[caliper].self_time.append(float(sline[3]))
-                    loaded.data[caliper].total_time.append(float(sline[4]))
-                    loaded.data[caliper].n_calls.append(int(sline[5]))
+                    loaded.data[caliper].time_percent[data_index] = float(sline[1])
+                    loaded.data[caliper].cumul_time[data_index] = float(sline[2])
+                    loaded.data[caliper].self_time[data_index] = float(sline[3])
+                    loaded.data[caliper].total_time[data_index] = float(sline[4])
+                    loaded.data[caliper].n_calls[data_index] = int(sline[5])
 
         if not loaded.data:
             raise ValueError(f"No caliper data found in file '{self.path}'.")

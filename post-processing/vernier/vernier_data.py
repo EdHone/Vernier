@@ -9,25 +9,24 @@ import numpy as np
 from pathlib import Path
 from typing import Optional
 
-@dataclass(order=True)
 class VernierCaliper():
     """Class to hold data for a single Vernier caliper, including arrays for each metric."""
 
-    total_time: list[float]
-    time_percent: list[float]
-    self_time: list[float]
-    cumul_time: list[float]
-    n_calls: list[int]
+    self_time: np.ndarray
+    total_time: np.ndarray
+    time_percent: np.ndarray
+    cumul_time: np.ndarray
+    n_calls: np.ndarray
     name: str
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, n_ranks: int):
 
         self.name = name
-        self.time_percent = []
-        self.cumul_time = []
-        self.self_time = []
-        self.total_time = []
-        self.n_calls = []
+        self.time_percent = np.zeros(n_ranks)
+        self.cumul_time = np.zeros(n_ranks)
+        self.self_time = np.zeros(n_ranks)
+        self.total_time = np.zeros(n_ranks)
+        self.n_calls = np.zeros(n_ranks)
 
         return
 
@@ -36,13 +35,25 @@ class VernierCaliper():
 
         return [
             self.name.replace('@0', ''), # caliper name
-            round(np.mean(self.total_time), 5), # mean total time across calls
-            round(np.mean(self.self_time), 5), # mean self time across calls
-            round(np.mean(self.cumul_time), 5), # mean cumulative time across calls
-            self.n_calls[0], # number of calls (should be the same for all entries, so just take the first)
-            round(np.mean(self.time_percent), 5), # mean percentage of time across calls
-            round(np.mean(self.total_time) / self.n_calls[0], 5) # mean time per call
+            round(self.total_time.mean(), 5), # mean total time across calls
+            round(self.self_time.mean(), 5), # mean self time across calls
+            round(self.cumul_time.mean(), 5), # mean cumulative time across calls
+            int(self.n_calls[0])    , # number of calls (should be the same for all entries, so just take the first)
+            round(self.time_percent.mean(), 5), # mean percentage of time across calls
+            round(self.total_time.mean() / self.n_calls[0], 5) # mean time per call
         ]
+
+    def __lt__(self, other):
+        """Comparison method for sorting calipers by self time."""
+        return self.self_time.sum() < other.self_time.sum()
+
+    def __eq__(self, other):
+        """Equality method for comparing calipers by self time."""
+        return self.self_time.sum() == other.self_time.sum()
+
+    def __gt__(self, other):
+        """Comparison method for sorting calipers by self time."""
+        return self.self_time.sum() > other.self_time.sum()
 
 
 class VernierData():
@@ -55,11 +66,11 @@ class VernierData():
         return
 
 
-    def add_caliper(self, caliper_key: str):
+    def add_caliper(self, caliper_key: str, n_ranks: int):
         """Adds a new caliper to the data structure, with empty arrays for each metric."""
 
         # Create empty data arrays
-        self.data[caliper_key] = VernierCaliper(caliper_key)
+        self.data[caliper_key] = VernierCaliper(caliper_key, n_ranks)
 
 
     def filter(self, caliper_keys: list[str]):
@@ -121,15 +132,19 @@ def aggregate(vernier_data_list: list[VernierData], internal_consistency: bool =
             raise ValueError("Input VernierData objects do not have the same set of calipers, " \
                              "but internal_consistency is set to True.")
 
-    for vernier_data in vernier_data_list:
+    for i, vernier_data in enumerate(vernier_data_list):
+        n_datasets = len(vernier_data_list)
         for caliper in vernier_data.data.keys():
             if not caliper in aggregated.data:
-                aggregated.add_caliper(caliper)
+                len_dataset = len(vernier_data.data[caliper].self_time)
+                aggregated.add_caliper(caliper, n_datasets * len_dataset)
 
-            aggregated.data[caliper].time_percent.extend(vernier_data.data[caliper].time_percent)
-            aggregated.data[caliper].cumul_time.extend(vernier_data.data[caliper].cumul_time)
-            aggregated.data[caliper].self_time.extend(vernier_data.data[caliper].self_time)
-            aggregated.data[caliper].total_time.extend(vernier_data.data[caliper].total_time)
-            aggregated.data[caliper].n_calls.extend(vernier_data.data[caliper].n_calls)
+            data_begin = i*len_dataset
+            data_end = (i+1)*len_dataset
+            aggregated.data[caliper].time_percent[data_begin:data_end] = vernier_data.data[caliper].time_percent
+            aggregated.data[caliper].cumul_time[data_begin:data_end] = vernier_data.data[caliper].cumul_time
+            aggregated.data[caliper].self_time[data_begin:data_end] = vernier_data.data[caliper].self_time
+            aggregated.data[caliper].total_time[data_begin:data_end] = vernier_data.data[caliper].total_time
+            aggregated.data[caliper].n_calls[data_begin:data_end] = vernier_data.data[caliper].n_calls
 
     return aggregated
